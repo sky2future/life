@@ -44,6 +44,10 @@ class Life(object):
     @property
     def text_size(self):
         return 20
+    
+    @property
+    def frequency(self):
+        return 25
 
     def show_win(self):
         # 初始化 pygame
@@ -57,6 +61,8 @@ class Life(object):
         pygame.display.set_caption(self.title)
 
         self.welcom_str()
+
+        self.freq = 0
 
         # 游戏循环
         running = True
@@ -85,7 +91,16 @@ class Life(object):
         y = None
         text_surface_list = []
         if len(self.start_str_text_surface) == 2:
-            return
+            text_speed = 1
+            self.freq += 1
+            for text_surface, text_rect in self.start_str_text_surface[1]:
+                if text_rect.center[0] > self.win_size[0] // 2 and self.freq==self.frequency:
+                    self.freq = 0
+                    text_rect.center = (text_rect.center[0]-text_speed, text_rect.center[1])
+                    self.screen.blit(text_surface, text_rect)
+                    return
+                else:
+                    self.screen.blit(text_surface, text_rect)
 
         if len(self.start_str_text_surface) == 1:
             for index,line in enumerate(self.start_str):
@@ -96,8 +111,9 @@ class Life(object):
                     y = len(self.start_str)*text_rect.height
                     y = (self.win_size[1] - y )//2 - text_rect.height//2
 
-                text_rect.center = (self.win_size[0] // 2, y+index*(text_rect.height))
-                text_surface_list.append(text_rect)
+                # text_rect.center = (self.win_size[0] // 2, y+index*(text_rect.height)) origin normal position
+                text_rect.center = (self.win_size[0]+text_rect.width//2, y+index*(text_rect.height))
+                text_surface_list.append([text_surface, text_rect])
                 self.screen.blit(text_surface, text_rect)
                 y += self.font.get_linesize()
             self.start_str_text_surface.append(text_surface_list)
