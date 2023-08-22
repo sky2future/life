@@ -48,6 +48,15 @@ class Life(object):
     @property
     def frequency(self):
         return 25
+    
+    @property
+    def text_speed(self):
+        return 1
+    
+    def save_param_init(self):
+        self.freq = 0
+        self.is_second_text_animation = False
+        self.text_animation_is_over = False
 
     def show_win(self):
         # 初始化 pygame
@@ -62,7 +71,7 @@ class Life(object):
 
         self.welcom_str()
 
-        self.freq = 0
+        self.save_param_init()
 
         # 游戏循环
         running = True
@@ -91,17 +100,30 @@ class Life(object):
         y = None
         text_surface_list = []
         if len(self.start_str_text_surface) == 2:
-            text_speed = 1
             self.freq += 1
-            for text_surface, text_rect in self.start_str_text_surface[1]:
-                if text_rect.center[0] > self.win_size[0] // 2 and self.freq==self.frequency:
-                    self.freq = 0
-                    text_rect.center = (text_rect.center[0]-text_speed, text_rect.center[1])
-                    self.screen.blit(text_surface, text_rect)
-                    return
-                else:
-                    self.screen.blit(text_surface, text_rect)
+            if not self.is_second_text_animation:  
+                self.first_text_animation() 
+            else:         
+                # second text animation:steps out
+                for index, (text_surface, text_rect) in enumerate(self.start_str_text_surface[1]):
+                    if text_rect.center[0] < self.win_size[0] + text_rect.width//2 and self.freq==self.frequency:
+                        self.freq = 0
+                        text_rect.center = (text_rect.center[0]+self.text_speed, text_rect.center[1])
+                        self.screen.blit(text_surface, text_rect)
+                        # only move one text once time,so next item need to originly bilt
+                        for text_surface, text_rect in self.start_str_text_surface[1][index:]:
+                            self.screen.blit(text_surface, text_rect)
+                        return
+                    else:
+                        self.screen.blit(text_surface, text_rect)
+                #check the second text animation whether over
+                for text_surface, text_rect in self.start_str_text_surface[1]:
+                    if text_rect.center[0] < self.win_size[0] + text_rect.width//2:
+                        return
+                self.text_animation_is_over = True
+                # next game show after text animation over
 
+        # init
         if len(self.start_str_text_surface) == 1:
             for index,line in enumerate(self.start_str):
                 text_surface = self.font.render(line, True, self.font_text_color )
@@ -117,6 +139,24 @@ class Life(object):
                 self.screen.blit(text_surface, text_rect)
                 y += self.font.get_linesize()
             self.start_str_text_surface.append(text_surface_list)
+
+    def first_text_animation(self):
+        # first animation:text steps in
+        for text_surface, text_rect in self.start_str_text_surface[1]:
+            if text_rect.center[0] > self.win_size[0] // 2 and self.freq==self.frequency:
+                self.freq = 0
+                text_rect.center = (text_rect.center[0]-self.text_speed, text_rect.center[1])
+                self.screen.blit(text_surface, text_rect)
+                return
+            else:
+                self.screen.blit(text_surface, text_rect)
+        # check first text animation whether out
+        self.start_str_text_surface[1].reverse()
+        for text_surface, text_rect in self.start_str_text_surface[1]:
+            if not self.is_second_text_animation and text_rect.center[0] > self.win_size[0] // 2:
+                self.start_str_text_surface[1].reverse()
+                return
+        self.is_second_text_animation = True
 
     def welcom_str(self):
         self.font = pygame.font.Font('data/font/SIMKAI.TTF', self.text_size)
